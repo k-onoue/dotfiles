@@ -1,5 +1,6 @@
 # CLI tools
 brew "git"
+brew "gh"
 brew "wget"
 brew "curl"
 brew "zsh"
