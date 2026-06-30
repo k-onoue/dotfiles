@@ -342,11 +342,11 @@ main() {
   install_oh_my_zsh
   install_juliaup
   install_uv
+  install_vscode_extensions
+  write_vscode_extension_diff
   check_managed_file_conflicts
   stow_dotfiles
   link_extra_files
-  install_vscode_extensions
-  write_vscode_extension_diff
 
   log "Ubuntu setup complete."
 }
