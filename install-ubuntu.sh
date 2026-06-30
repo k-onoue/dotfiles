@@ -116,6 +116,45 @@ install_apt_packages() {
   run_privileged apt-get install -y "${packages[@]}"
 }
 
+install_github_cli() {
+  local keyring_dir="/etc/apt/keyrings"
+  local keyring_path="$keyring_dir/githubcli-archive-keyring.gpg"
+  local list_path="/etc/apt/sources.list.d/github-cli.list"
+  local temp_key
+  local architecture
+
+  if command_exists gh; then
+    log "GitHub CLI is already installed."
+    return
+  fi
+
+  if [ "$CAN_USE_PRIVILEGES" != true ]; then
+    warn "GitHub CLI is not installed and privileged access is unavailable; skipping gh installation."
+    return
+  fi
+
+  if ! command_exists wget || ! command_exists dpkg; then
+    warn "wget or dpkg is missing; cannot add the GitHub CLI apt repository."
+    warn "Install packages from packages.txt and rerun this script."
+    return
+  fi
+
+  log "Installing GitHub CLI from the official apt repository."
+  run_privileged install -d -m 0755 "$keyring_dir"
+
+  temp_key="$(mktemp)"
+  wget -nv -O "$temp_key" https://cli.github.com/packages/githubcli-archive-keyring.gpg
+  run_privileged install -o root -g root -m 0644 "$temp_key" "$keyring_path"
+  rm -f "$temp_key"
+
+  architecture="$(dpkg --print-architecture)"
+  printf 'deb [arch=%s signed-by=%s] https://cli.github.com/packages stable main\n' \
+    "$architecture" "$keyring_path" | run_privileged tee "$list_path" >/dev/null
+
+  run_privileged apt-get update
+  run_privileged apt-get install -y gh
+}
+
 install_vscode() {
   local keyring_dir="/etc/apt/keyrings"
   local keyring_path="$keyring_dir/packages.microsoft.gpg"
@@ -361,6 +400,7 @@ main() {
   parse_args "$@"
   detect_privileges
   install_apt_packages
+  install_github_cli
   install_vscode
   install_oh_my_zsh
   install_juliaup
