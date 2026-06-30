@@ -6,17 +6,19 @@ readonly SCRIPT_DIR
 
 usage() {
   cat <<'EOF'
-Usage: ./install.sh [--server] [--check]
+Usage: ./install.sh [--server] [--check] [--prune-vscode-extensions]
 
 Options:
-  --server   Skip VS Code setup for CLI-only Ubuntu servers.
-  --check    Check managed file conflicts without installing packages.
-  -h, --help Show this help.
+  --server                    Skip VS Code setup for CLI-only Ubuntu servers.
+  --check                     Check managed file conflicts without installing packages.
+  --prune-vscode-extensions   Uninstall VS Code extensions not listed in dotfiles.
+  -h, --help                  Show this help.
 EOF
 }
 
 SERVER_MODE=false
 CHECK_ONLY=false
+PRUNE_VSCODE_EXTENSIONS=false
 
 parse_args() {
   while [ "$#" -gt 0 ]; do
@@ -31,6 +33,9 @@ parse_args() {
       --check)
         CHECK_ONLY=true
         ;;
+      --prune-vscode-extensions)
+        PRUNE_VSCODE_EXTENSIONS=true
+        ;;
       *)
         usage >&2
         exit 2
@@ -43,8 +48,19 @@ parse_args() {
 main() {
   local os_name
   local check_args=()
+  local installer_args=()
 
   parse_args "$@"
+
+  if [ "$SERVER_MODE" = true ] && [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
+    printf 'The --prune-vscode-extensions option cannot be used with --server.\n' >&2
+    exit 2
+  fi
+
+  if [ "$CHECK_ONLY" = true ] && [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
+    printf 'The --prune-vscode-extensions option cannot be used with --check.\n' >&2
+    exit 2
+  fi
 
   if [ "$SERVER_MODE" = true ]; then
     check_args+=(--skip-vscode)
@@ -62,7 +78,10 @@ main() {
         printf 'The --server option is intended for Ubuntu CLI servers.\n' >&2
         exit 2
       fi
-      exec "$SCRIPT_DIR/install-mac.sh"
+      if [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
+        installer_args+=(--prune-vscode-extensions)
+      fi
+      exec "$SCRIPT_DIR/install-mac.sh" "${installer_args[@]}"
       ;;
     Linux)
       run_linux_installer
@@ -86,6 +105,9 @@ run_linux_installer() {
   if [ "${ID:-}" = "ubuntu" ]; then
     if [ "$SERVER_MODE" = true ]; then
       exec "$SCRIPT_DIR/install-ubuntu.sh" --server
+    fi
+    if [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
+      exec "$SCRIPT_DIR/install-ubuntu.sh" --prune-vscode-extensions
     fi
     exec "$SCRIPT_DIR/install-ubuntu.sh"
   fi

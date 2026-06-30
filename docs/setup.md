@@ -212,6 +212,27 @@ code --list-extensions > vscode/extensions.txt
 ```
 
 新しい環境では，`./install.sh` が `vscode/extensions.txt` を読み，拡張機能を一つずつインストールする．
+ローカルにインストールされているが `vscode/extensions.txt` に無い拡張機能は，アンインストールしない．
+インストールスクリプトは，その差分を `vscode/extensions.extra.txt` に書き出す．
+このファイルはマシンごとの確認用であり，Git では管理しない．
+
+差分だけを手動で更新するには，次を実行する．
+
+```bash
+cd ~/ws/dotfiles
+bin/dotfiles-vscode-extension-diff
+```
+
+VS Code 拡張機能を `vscode/extensions.txt` に強制的に合わせるには，明示的に次を実行する．
+
+```bash
+cd ~/ws/dotfiles
+./install.sh --prune-vscode-extensions
+```
+
+このオプションは，`vscode/extensions.txt` に無いローカル拡張機能をアンインストールする．
+削除を伴うため，通常の `./install.sh` では実行しない．
+Ubuntu の `--server` とは併用できない．
 
 ## uv の使い方
 

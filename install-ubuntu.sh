@@ -5,15 +5,17 @@ DOTFILES_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_DIR
 SERVER_MODE=false
 CAN_USE_PRIVILEGES=false
+PRUNE_VSCODE_EXTENSIONS=false
 SUDO_CMD=()
 
 usage() {
   cat <<'EOF'
-Usage: ./install-ubuntu.sh [--server]
+Usage: ./install-ubuntu.sh [--server] [--prune-vscode-extensions]
 
 Options:
-  --server   Skip VS Code setup for CLI-only Ubuntu servers.
-  -h, --help Show this help.
+  --server                    Skip VS Code setup for CLI-only Ubuntu servers.
+  --prune-vscode-extensions   Uninstall VS Code extensions not listed in dotfiles.
+  -h, --help                  Show this help.
 EOF
 }
 
@@ -39,6 +41,9 @@ parse_args() {
       --server)
         SERVER_MODE=true
         ;;
+      --prune-vscode-extensions)
+        PRUNE_VSCODE_EXTENSIONS=true
+        ;;
       *)
         usage >&2
         exit 2
@@ -46,6 +51,11 @@ parse_args() {
     esac
     shift
   done
+
+  if [ "$SERVER_MODE" = true ] && [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
+    printf 'The --prune-vscode-extensions option cannot be used with --server.\n' >&2
+    exit 2
+  fi
 }
 
 detect_privileges() {
@@ -300,6 +310,25 @@ install_vscode_extensions() {
   done < "$extensions_file"
 }
 
+write_vscode_extension_diff() {
+  local diff_args=()
+
+  if [ "$SERVER_MODE" = true ]; then
+    return
+  fi
+
+  if ! command_exists code; then
+    return
+  fi
+
+  if [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
+    diff_args+=(--prune)
+  fi
+
+  log "Writing unmanaged VS Code extension list."
+  "$DOTFILES_DIR/bin/dotfiles-vscode-extension-diff" "${diff_args[@]}"
+}
+
 main() {
   parse_args "$@"
   detect_privileges
@@ -312,6 +341,7 @@ main() {
   stow_dotfiles
   link_extra_files
   install_vscode_extensions
+  write_vscode_extension_diff
 
   log "Ubuntu setup complete."
 }

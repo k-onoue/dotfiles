@@ -9,3 +9,6 @@
 # Local scratch files
 work/
 scratch/
+
+# Machine-local VS Code extension diff
+vscode/extensions.extra.txt

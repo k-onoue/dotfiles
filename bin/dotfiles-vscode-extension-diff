@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly DOTFILES_DIR
+
+MANAGED_EXTENSIONS="$DOTFILES_DIR/vscode/extensions.txt"
+DEFAULT_OUTPUT="$DOTFILES_DIR/vscode/extensions.extra.txt"
+TMP_DIR=""
+
+usage() {
+  cat <<'EOF'
+Usage: bin/dotfiles-vscode-extension-diff [--output PATH] [--prune]
+
+Write VS Code extensions installed locally but not listed in
+vscode/extensions.txt.
+
+Options:
+  --output PATH  Output file path. Default: vscode/extensions.extra.txt
+  --prune        Uninstall extensions not listed in vscode/extensions.txt.
+  -h, --help     Show this help.
+EOF
+}
+
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+cleanup() {
+  if [ -n "${TMP_DIR:-}" ]; then
+    rm -rf "$TMP_DIR"
+  fi
+}
+
+normalize_extension_list() {
+  awk '
+    /^[[:space:]]*$/ { next }
+    /^[[:space:]]*#/ { next }
+    { print $1 }
+  ' "$1" | sort -u
+}
+
+main() {
+  local output_file="$DEFAULT_OUTPUT"
+  local managed_tmp
+  local installed_tmp
+  local extra_tmp
+  local extra_count
+  local remaining_count
+  local extension
+  local prune=false
+  local failed_count=0
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -h | --help)
+        usage
+        return
+        ;;
+      --output)
+        if [ "$#" -lt 2 ]; then
+          usage >&2
+          return 2
+        fi
+        output_file="$2"
+        shift
+        ;;
+      --prune)
+        prune=true
+        ;;
+      *)
+        usage >&2
+        return 2
+        ;;
+    esac
+    shift
+  done
+
+  if ! command_exists code; then
+    printf "warning: VS Code command 'code' is not available; skipping extension diff output.\n" >&2
+    return
+  fi
+
+  if [ ! -r "$MANAGED_EXTENSIONS" ]; then
+    printf 'warning: Managed extension list is missing: %s\n' "$MANAGED_EXTENSIONS" >&2
+    return
+  fi
+
+  TMP_DIR="$(mktemp -d)"
+  trap cleanup EXIT
+  managed_tmp="$TMP_DIR/managed"
+  installed_tmp="$TMP_DIR/installed"
+  extra_tmp="$TMP_DIR/extra"
+
+  normalize_extension_list "$MANAGED_EXTENSIONS" > "$managed_tmp"
+  code --list-extensions | sort -u > "$installed_tmp"
+  comm -23 "$installed_tmp" "$managed_tmp" > "$extra_tmp"
+
+  mkdir -p "$(dirname -- "$output_file")"
+  cp "$extra_tmp" "$output_file"
+
+  extra_count="$(wc -l < "$output_file" | tr -d '[:space:]')"
+  if [ "$extra_count" = "0" ]; then
+    printf 'No unmanaged VS Code extensions found. Wrote empty file: %s\n' "$output_file"
+    return
+  fi
+
+  if [ "$prune" = true ]; then
+    printf 'Uninstalling %s unmanaged VS Code extension(s).\n' "$extra_count"
+    while IFS= read -r extension || [ -n "$extension" ]; do
+      if code --uninstall-extension "$extension"; then
+        continue
+      fi
+      failed_count=$((failed_count + 1))
+      printf 'warning: Failed to uninstall VS Code extension: %s\n' "$extension" >&2
+    done < "$extra_tmp"
+
+    code --list-extensions | sort -u > "$installed_tmp"
+    comm -23 "$installed_tmp" "$managed_tmp" > "$extra_tmp"
+    cp "$extra_tmp" "$output_file"
+
+    remaining_count="$(wc -l < "$output_file" | tr -d '[:space:]')"
+    if [ "$remaining_count" = "0" ]; then
+      printf 'VS Code extensions now match dotfiles. Wrote empty file: %s\n' "$output_file"
+      return
+    fi
+
+    printf 'warning: %s unmanaged VS Code extension(s) remain after pruning.\n' "$remaining_count" >&2
+    if [ "$failed_count" -gt 0 ]; then
+      return 1
+    fi
+    return
+  fi
+
+  printf 'Wrote %s unmanaged VS Code extension(s) to: %s\n' "$extra_count" "$output_file"
+}
+
+main "$@"

@@ -109,8 +109,10 @@ check_vscode_files() {
 }
 
 print_conflicts() {
-  local backup_dir="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+  local backup_dir
   local target_path
+
+  backup_dir="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 
   printf 'Managed dotfiles would conflict with existing files:\n' >&2
   for target_path in "${conflicts[@]}"; do

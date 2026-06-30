@@ -3,6 +3,17 @@ set -euo pipefail
 
 DOTFILES_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_DIR
+PRUNE_VSCODE_EXTENSIONS=false
+
+usage() {
+  cat <<'EOF'
+Usage: ./install-mac.sh [--prune-vscode-extensions]
+
+Options:
+  --prune-vscode-extensions   Uninstall VS Code extensions not listed in dotfiles.
+  -h, --help                  Show this help.
+EOF
+}
 
 log() {
   printf '\n==> %s\n' "$*"
@@ -14,6 +25,25 @@ warn() {
 
 command_exists() {
   command -v "$1" >/dev/null 2>&1
+}
+
+parse_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      --prune-vscode-extensions)
+        PRUNE_VSCODE_EXTENSIONS=true
+        ;;
+      *)
+        usage >&2
+        exit 2
+        ;;
+    esac
+    shift
+  done
 }
 
 ensure_homebrew() {
@@ -134,7 +164,23 @@ install_vscode_extensions() {
   done < "$extensions_file"
 }
 
+write_vscode_extension_diff() {
+  local diff_args=()
+
+  if ! command_exists code; then
+    return
+  fi
+
+  if [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
+    diff_args+=(--prune)
+  fi
+
+  log "Writing unmanaged VS Code extension list."
+  "$DOTFILES_DIR/bin/dotfiles-vscode-extension-diff" "${diff_args[@]}"
+}
+
 main() {
+  parse_args "$@"
   ensure_homebrew
   install_brew_packages
   install_oh_my_zsh
@@ -142,6 +188,7 @@ main() {
   stow_dotfiles
   link_extra_files
   install_vscode_extensions
+  write_vscode_extension_diff
 
   log "macOS setup complete."
 }
