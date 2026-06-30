@@ -142,6 +142,29 @@ link_extra_files() {
     "$HOME/.julia/config/startup.jl"
 }
 
+reload_zsh_config() {
+  if ! command_exists zsh; then
+    warn "zsh is not available; skipping ~/.zshrc reload."
+    return
+  fi
+
+  if [ ! -r "$HOME/.zshrc" ]; then
+    warn "$HOME/.zshrc is not readable; skipping zsh reload."
+    return
+  fi
+
+  log "Sourcing ~/.zshrc in a new zsh process."
+  if ! zsh -c 'source "$HOME/.zshrc"'; then
+    warn "Failed to source ~/.zshrc. Check the zsh configuration."
+    return 1
+  fi
+
+  if [ -t 1 ]; then
+    warn "install.sh cannot reload the already-running parent shell."
+    warn "Run 'source ~/.zshrc' or 'exec zsh -l' in this terminal to apply prompt changes immediately."
+  fi
+}
+
 install_vscode_extensions() {
   local extensions_file="$DOTFILES_DIR/vscode/extensions.txt"
   local extension
@@ -189,6 +212,7 @@ main() {
   check_managed_file_conflicts
   stow_dotfiles
   link_extra_files
+  reload_zsh_config
 
   log "macOS setup complete."
 }
