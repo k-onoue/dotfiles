@@ -1,19 +1,58 @@
 {
   "workbench.startupEditor": "none",
+  "workbench.colorTheme": "Tokyo Night",
+  "workbench.colorCustomizations": {
+    "terminal.background": "#00000000"
+  },
+  "workbench.editorAssociations": {
+    "*.copilotmd": "vscode.markdown.preview.editor",
+    "*.mlx": "default"
+  },
+  "workbench.settings.applyToAllProfiles": [
+    "workbench.colorCustomizations"
+  ],
+  "window.titleBarStyle": "custom",
+  "window.zoomLevel": 4,
   "editor.fontSize": 14,
   "editor.formatOnSave": true,
   "editor.rulers": [
     88,
     120
   ],
+  "[latex]": {
+    "editor.rulers": [
+      88
+    ],
+    "editor.wordWrap": "on",
+    "editor.wordWrapColumn": 88,
+    "editor.wrappingIndent": "same"
+  },
+  "files.autoSave": "afterDelay",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "files.eol": "\n",
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+  "explorer.confirmPasteNative": false,
   "terminal.integrated.defaultProfile.osx": "zsh",
   "terminal.integrated.defaultProfile.linux": "zsh",
+  "terminal.integrated.gpuAcceleration": "off",
+  "terminal.integrated.commandsToSkipShell": [
+    "language-julia.interrupt",
+    "matlab.interrupt"
+  ],
   "git.confirmSync": false,
   "git.autofetch": true,
+  "remote.SSH.connectTimeout": 300,
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
   "python.terminal.activateEnvironment": true,
-  "julia.executablePath": "julia"
+  "jupyter.askForKernelRestart": false,
+  "julia.executablePath": "julia",
+  "julia.enableCrashReporter": false,
+  "julia.enableTelemetry": true,
+  "julia.juliaup.install.hint": false,
+  "julia.symbolCacheDownload": true,
+  "liveServer.settings.donotShowInfoMsg": true,
+  "chat.agent.maxRequests": 500,
+  "chat.editing.alwaysSaveWithGeneratedChanges": true
 }

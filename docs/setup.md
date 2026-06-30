@@ -28,10 +28,12 @@ Julia の依存関係は，各プロジェクトの `Project.toml` と `Manifest
 
 Git の `user.name` と `user.email` は管理しない．
 この二つは個人またはマシンに依存するため，必要な環境で個別に設定する．
+管理対象の `git/.gitconfig` は，存在する場合に `~/.gitconfig.local` も読み込む．
+名前とメールアドレスは `~/.gitconfig.local` に置く．
 
 ```bash
-git config --global user.name "Your Name"
-git config --global user.email "you@example.com"
+git config --file ~/.gitconfig.local user.name "Your Name"
+git config --file ~/.gitconfig.local user.email "you@example.com"
 ```
 
 ## 初回セットアップ

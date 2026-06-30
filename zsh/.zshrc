@@ -9,6 +9,7 @@ path=(
   "$HOME/bin"
   "$HOME/.local/bin"
   "$HOME/.juliaup/bin"
+  "$HOME/.elan/bin"
   "/opt/homebrew/bin"
   "/opt/homebrew/sbin"
   "/usr/local/bin"
@@ -85,6 +86,11 @@ fi
 # juliaup installs Julia launchers in ~/.juliaup/bin, which is added above.
 if command -v juliaup >/dev/null 2>&1; then
   eval "$(juliaup completions zsh 2>/dev/null || true)"
+fi
+
+# iTerm2 shell integration is optional and only loaded when installed.
+if [ -r "$HOME/.iterm2_shell_integration.zsh" ]; then
+  source "$HOME/.iterm2_shell_integration.zsh"
 fi
 
 # Keep user-local overrides in a separate untracked file when needed.

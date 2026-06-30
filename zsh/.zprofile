@@ -16,6 +16,7 @@ path=(
   "$HOME/bin"
   "$HOME/.local/bin"
   "$HOME/.juliaup/bin"
+  "$HOME/.elan/bin"
   $path
 )
 export PATH
