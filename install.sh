@@ -6,42 +6,62 @@ readonly SCRIPT_DIR
 
 usage() {
   cat <<'EOF'
-Usage: ./install.sh [--check]
+Usage: ./install.sh [--server] [--check]
 
 Options:
+  --server   Skip VS Code setup for CLI-only Ubuntu servers.
   --check    Check managed file conflicts without installing packages.
   -h, --help Show this help.
 EOF
 }
 
+SERVER_MODE=false
+CHECK_ONLY=false
+
+parse_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      --server)
+        SERVER_MODE=true
+        ;;
+      --check)
+        CHECK_ONLY=true
+        ;;
+      *)
+        usage >&2
+        exit 2
+        ;;
+    esac
+    shift
+  done
+}
+
 main() {
   local os_name
+  local check_args=()
 
-  if [ "$#" -gt 1 ]; then
-    usage >&2
-    exit 2
+  parse_args "$@"
+
+  if [ "$SERVER_MODE" = true ]; then
+    check_args+=(--skip-vscode)
   fi
 
-  case "${1:-}" in
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    --check)
-      exec "$SCRIPT_DIR/bin/dotfiles-check-conflicts"
-      ;;
-    "")
-      ;;
-    *)
-      usage >&2
-      exit 2
-      ;;
-  esac
+  if [ "$CHECK_ONLY" = true ]; then
+    exec "$SCRIPT_DIR/bin/dotfiles-check-conflicts" "${check_args[@]}"
+  fi
 
   os_name="$(uname -s)"
 
   case "$os_name" in
     Darwin)
+      if [ "$SERVER_MODE" = true ]; then
+        printf 'The --server option is intended for Ubuntu CLI servers.\n' >&2
+        exit 2
+      fi
       exec "$SCRIPT_DIR/install-mac.sh"
       ;;
     Linux)
@@ -64,6 +84,9 @@ run_linux_installer() {
   . /etc/os-release
 
   if [ "${ID:-}" = "ubuntu" ]; then
+    if [ "$SERVER_MODE" = true ]; then
+      exec "$SCRIPT_DIR/install-ubuntu.sh" --server
+    fi
     exec "$SCRIPT_DIR/install-ubuntu.sh"
   fi
 

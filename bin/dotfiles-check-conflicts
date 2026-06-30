@@ -5,13 +5,17 @@ DOTFILES_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly DOTFILES_DIR
 
 conflicts=()
+SKIP_VSCODE=false
 
 usage() {
   cat <<'EOF'
-Usage: bin/dotfiles-check-conflicts
+Usage: bin/dotfiles-check-conflicts [--skip-vscode]
 
 Check whether files managed by this dotfiles repository would conflict with
 existing files in $HOME.
+
+Options:
+  --skip-vscode  Do not check VS Code settings and keybindings.
 
 This command never modifies files.
 EOF
@@ -122,21 +126,27 @@ print_conflicts() {
 }
 
 main() {
-  case "${1:-}" in
-    -h | --help)
-      usage
-      return
-      ;;
-    "")
-      ;;
-    *)
-      usage >&2
-      return 2
-      ;;
-  esac
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -h | --help)
+        usage
+        return
+        ;;
+      --skip-vscode)
+        SKIP_VSCODE=true
+        ;;
+      *)
+        usage >&2
+        return 2
+        ;;
+    esac
+    shift
+  done
 
   check_common_files
-  check_vscode_files
+  if [ "$SKIP_VSCODE" != true ]; then
+    check_vscode_files
+  fi
 
   if [ "${#conflicts[@]}" -gt 0 ]; then
     print_conflicts
