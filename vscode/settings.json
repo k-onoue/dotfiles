@@ -1,6 +1,7 @@
 {
   "workbench.startupEditor": "none",
   "workbench.colorTheme": "Tokyo Night",
+  "workbench.iconTheme": "material-icon-theme",
   "workbench.colorCustomizations": {
     "terminal.background": "#00000000"
   },

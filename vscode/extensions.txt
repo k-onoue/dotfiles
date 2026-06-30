@@ -35,6 +35,7 @@ ms-vscode.remote-explorer
 myriad-dreamin.tinymist
 openai.chatgpt
 pdconsec.vscode-print
+pkief.material-icon-theme
 ritwickdey.liveserver
 shd101wyy.markdown-preview-enhanced
 svelte.svelte-vscode
