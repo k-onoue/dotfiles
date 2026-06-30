@@ -165,18 +165,18 @@ install_vscode_extensions() {
 }
 
 write_vscode_extension_diff() {
-  local diff_args=()
-
   if ! command_exists code; then
     return
   fi
 
   if [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
-    diff_args+=(--prune)
+    log "Writing unmanaged VS Code extension list."
+    "$DOTFILES_DIR/bin/dotfiles-vscode-extension-diff" --prune
+    return
   fi
 
   log "Writing unmanaged VS Code extension list."
-  "$DOTFILES_DIR/bin/dotfiles-vscode-extension-diff" "${diff_args[@]}"
+  "$DOTFILES_DIR/bin/dotfiles-vscode-extension-diff"
 }
 
 main() {

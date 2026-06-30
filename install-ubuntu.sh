@@ -6,7 +6,7 @@ readonly DOTFILES_DIR
 SERVER_MODE=false
 CAN_USE_PRIVILEGES=false
 PRUNE_VSCODE_EXTENSIONS=false
-SUDO_CMD=()
+USE_SUDO=false
 
 usage() {
   cat <<'EOF'
@@ -61,7 +61,7 @@ parse_args() {
 detect_privileges() {
   if [ "$(id -u)" -eq 0 ]; then
     CAN_USE_PRIVILEGES=true
-    SUDO_CMD=()
+    USE_SUDO=false
     log "Running as root; privileged package installation is available."
     return
   fi
@@ -73,7 +73,7 @@ detect_privileges() {
 
   if sudo -v; then
     CAN_USE_PRIVILEGES=true
-    SUDO_CMD=(sudo)
+    USE_SUDO=true
     log "sudo is available; privileged package installation is enabled."
     return
   fi
@@ -83,7 +83,12 @@ detect_privileges() {
 }
 
 run_privileged() {
-  "${SUDO_CMD[@]}" "$@"
+  if [ "$USE_SUDO" = true ]; then
+    sudo "$@"
+    return
+  fi
+
+  "$@"
 }
 
 install_apt_packages() {
@@ -311,8 +316,6 @@ install_vscode_extensions() {
 }
 
 write_vscode_extension_diff() {
-  local diff_args=()
-
   if [ "$SERVER_MODE" = true ]; then
     return
   fi
@@ -322,11 +325,13 @@ write_vscode_extension_diff() {
   fi
 
   if [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
-    diff_args+=(--prune)
+    log "Writing unmanaged VS Code extension list."
+    "$DOTFILES_DIR/bin/dotfiles-vscode-extension-diff" --prune
+    return
   fi
 
   log "Writing unmanaged VS Code extension list."
-  "$DOTFILES_DIR/bin/dotfiles-vscode-extension-diff" "${diff_args[@]}"
+  "$DOTFILES_DIR/bin/dotfiles-vscode-extension-diff"
 }
 
 main() {

@@ -47,8 +47,6 @@ parse_args() {
 
 main() {
   local os_name
-  local check_args=()
-  local installer_args=()
 
   parse_args "$@"
 
@@ -62,12 +60,11 @@ main() {
     exit 2
   fi
 
-  if [ "$SERVER_MODE" = true ]; then
-    check_args+=(--skip-vscode)
-  fi
-
   if [ "$CHECK_ONLY" = true ]; then
-    exec "$SCRIPT_DIR/bin/dotfiles-check-conflicts" "${check_args[@]}"
+    if [ "$SERVER_MODE" = true ]; then
+      exec "$SCRIPT_DIR/bin/dotfiles-check-conflicts" --skip-vscode
+    fi
+    exec "$SCRIPT_DIR/bin/dotfiles-check-conflicts"
   fi
 
   os_name="$(uname -s)"
@@ -79,9 +76,9 @@ main() {
         exit 2
       fi
       if [ "$PRUNE_VSCODE_EXTENSIONS" = true ]; then
-        installer_args+=(--prune-vscode-extensions)
+        exec "$SCRIPT_DIR/install-mac.sh" --prune-vscode-extensions
       fi
-      exec "$SCRIPT_DIR/install-mac.sh" "${installer_args[@]}"
+      exec "$SCRIPT_DIR/install-mac.sh"
       ;;
     Linux)
       run_linux_installer
