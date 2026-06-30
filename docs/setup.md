@@ -22,6 +22,7 @@ Julia の依存関係は，各プロジェクトの `Project.toml` と `Manifest
 - vim の設定
 - tmux の設定
 - VS Code のユーザー設定，キーバインド，拡張機能一覧
+- VS Code Remote SSH 接続先へ自動インストールする拡張機能一覧
 - Julia の `startup.jl`
 - macOS 用の `Brewfile`
 - Ubuntu 用の `packages.txt`
@@ -55,6 +56,8 @@ cd ~/ws/dotfiles
 
 `--server` は，VS Code 本体のインストール，VS Code 設定ファイルのリンク，VS Code 拡張機能のインストールをスキップする．
 ローカル PC の VS Code から Remote SSH で接続する場合，サーバ側には VS Code 本体を入れない．
+Remote SSH 接続先で使う拡張機能は，ローカル VS Code の `remote.SSH.defaultExtensions` で管理する．
+ローカル側でこのリポジトリの VS Code 設定を同期しておけば，Remote SSH 接続時に VS Code Server 側へ必要な拡張機能が自動で入る．
 
 `install.sh` は OS を判定し，macOS では `install-mac.sh` を実行する．
 Ubuntu では `/etc/os-release` を読んで Ubuntu であることを確認し，`install-ubuntu.sh` を実行する．
@@ -144,6 +147,7 @@ git pull
 Oh My Zsh，juliaup，uv も存在を確認してから処理する．
 VS Code 拡張機能は，`vscode/extensions.txt` の内容を一つずつインストールする．
 `--server` を付けた場合，VS Code 拡張機能もインストールしない．
+ただし，Remote SSH 接続先で使う拡張機能は，サーバ上の `install.sh --server` ではなく，ローカル VS Code の `remote.SSH.defaultExtensions` が扱う．
 
 sudo が使えない環境では，apt で入れるパッケージは管理者に依頼する．
 既に必要なコマンドが入っていれば，dotfiles のリンクやユーザー領域のツール導入は続行できる．
@@ -237,6 +241,19 @@ cd ~/ws/dotfiles
 そのため，既存の `~/.zshrc` や VS Code 設定ファイルが衝突していても，拡張機能の強制同期だけは先に完了する．
 削除を伴うため，通常の `./install.sh` では実行しない．
 Ubuntu の `--server` とは併用できない．
+
+## VS Code Remote SSH 拡張機能
+
+Remote SSH 接続先に毎回必要になる拡張機能は，`vscode/settings.json` の `remote.SSH.defaultExtensions` で管理する．
+この設定はローカル VS Code のユーザー設定として読み込まれ，SSH ホストへ接続したときに VS Code Server 側へ拡張機能をインストールする．
+サーバ側に VS Code 本体を入れる必要はない．
+
+`remote.SSH.defaultExtensions` には，リモートの workspace 側で動く拡張機能だけを入れる．
+Python，Julia，Jupyter，formatter，linter，言語サポートが対象になる．
+テーマ，Remote SSH 本体，ローカル UI だけで動く拡張機能は入れない．
+
+新しく追加したい拡張機能がある場合は，ローカル VS Code にインストールしてから `vscode/extensions.txt` を更新し，必要なら `vscode/settings.json` の `remote.SSH.defaultExtensions` にも追加する．
+既に接続中の SSH ホストへすぐ反映したい場合は，VS Code で Remote SSH の window を再読み込みするか，再接続する．
 
 ## uv の使い方
 
