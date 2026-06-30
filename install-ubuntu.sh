@@ -256,6 +256,38 @@ install_uv() {
   export PATH="$HOME/.local/bin:$PATH"
 }
 
+install_codex_cli() {
+  local temp_installer
+
+  if command_exists codex; then
+    log "Codex CLI is already installed."
+    return
+  fi
+
+  if [ "$CAN_USE_PRIVILEGES" != true ]; then
+    warn "Codex CLI is not installed and privileged access is unavailable; skipping Codex CLI installation."
+    return
+  fi
+
+  if ! command_exists curl; then
+    warn "curl is not installed; skipping Codex CLI installation."
+    return
+  fi
+
+  log "Installing Codex CLI."
+  temp_installer="$(mktemp)"
+  if ! curl -fsSL https://chatgpt.com/codex/install.sh -o "$temp_installer"; then
+    rm -f "$temp_installer"
+    return 1
+  fi
+  if ! CODEX_NON_INTERACTIVE=1 sh "$temp_installer"; then
+    rm -f "$temp_installer"
+    return 1
+  fi
+  rm -f "$temp_installer"
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
 check_managed_file_conflicts() {
   log "Checking for existing managed file conflicts."
   if [ "$SERVER_MODE" = true ]; then
@@ -409,6 +441,7 @@ main() {
   install_oh_my_zsh
   install_juliaup
   install_uv
+  install_codex_cli
   install_vscode_extensions
   write_vscode_extension_diff
   check_managed_file_conflicts

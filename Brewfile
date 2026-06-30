@@ -17,6 +17,10 @@ brew "stow"
 brew "shellcheck"
 brew "uv"
 brew "juliaup"
+brew "node"
+
+# CLI applications distributed as Homebrew casks
+cask "codex"
 
 # GUI applications
 cask "visual-studio-code"
