@@ -1,0 +1,16 @@
+git
+curl
+wget
+vim
+tmux
+ripgrep
+fd-find
+fzf
+jq
+tree
+zsh
+stow
+shellcheck
+ca-certificates
+gnupg
+lsb-release

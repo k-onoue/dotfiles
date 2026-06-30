@@ -1,0 +1,12 @@
+[
+  {
+    "key": "cmd+shift+r",
+    "command": "workbench.action.reloadWindow",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+shift+r",
+    "command": "workbench.action.reloadWindow",
+    "when": "isLinux"
+  }
+]

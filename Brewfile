@@ -1,0 +1,24 @@
+tap "homebrew/bundle"
+
+# CLI tools
+brew "git"
+brew "wget"
+brew "curl"
+brew "zsh"
+brew "tmux"
+brew "vim"
+brew "ripgrep"
+brew "fd"
+brew "fzf"
+brew "jq"
+brew "tree"
+brew "eza"
+brew "bat"
+brew "stow"
+brew "shellcheck"
+brew "uv"
+brew "juliaup"
+
+# GUI applications
+cask "visual-studio-code"
+cask "iterm2"
