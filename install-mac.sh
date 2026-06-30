@@ -27,6 +27,10 @@ command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
+run_code_cli() {
+  NODE_NO_WARNINGS=1 code "$@"
+}
+
 parse_args() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -183,7 +187,7 @@ install_vscode_extensions() {
         ;;
     esac
 
-    code --install-extension "$extension" --force
+    run_code_cli --install-extension "$extension" --force
   done < "$extensions_file"
 }
 

@@ -26,6 +26,10 @@ command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
+run_code_cli() {
+  NODE_NO_WARNINGS=1 code "$@"
+}
+
 cleanup() {
   if [ -n "${TMP_DIR:-}" ]; then
     rm -rf "$TMP_DIR"
@@ -93,7 +97,7 @@ main() {
   extra_tmp="$TMP_DIR/extra"
 
   normalize_extension_list "$MANAGED_EXTENSIONS" > "$managed_tmp"
-  code --list-extensions | sort -u > "$installed_tmp"
+  run_code_cli --list-extensions | sort -u > "$installed_tmp"
   comm -23 "$installed_tmp" "$managed_tmp" > "$extra_tmp"
 
   mkdir -p "$(dirname -- "$output_file")"
@@ -108,14 +112,14 @@ main() {
   if [ "$prune" = true ]; then
     printf 'Uninstalling %s unmanaged VS Code extension(s).\n' "$extra_count"
     while IFS= read -r extension || [ -n "$extension" ]; do
-      if code --uninstall-extension "$extension"; then
+      if run_code_cli --uninstall-extension "$extension"; then
         continue
       fi
       failed_count=$((failed_count + 1))
       printf 'warning: Failed to uninstall VS Code extension: %s\n' "$extension" >&2
     done < "$extra_tmp"
 
-    code --list-extensions | sort -u > "$installed_tmp"
+    run_code_cli --list-extensions | sort -u > "$installed_tmp"
     comm -23 "$installed_tmp" "$managed_tmp" > "$extra_tmp"
     cp "$extra_tmp" "$output_file"
 
