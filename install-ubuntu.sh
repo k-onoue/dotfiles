@@ -97,6 +97,11 @@ install_uv() {
   export PATH="$HOME/.local/bin:$PATH"
 }
 
+check_managed_file_conflicts() {
+  log "Checking for existing managed file conflicts."
+  "$DOTFILES_DIR/bin/dotfiles-check-conflicts"
+}
+
 stow_dotfiles() {
   log "Linking dotfiles with GNU Stow."
 
@@ -171,6 +176,7 @@ main() {
   install_oh_my_zsh
   install_juliaup
   install_uv
+  check_managed_file_conflicts
   stow_dotfiles
   link_extra_files
   install_vscode_extensions

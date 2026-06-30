@@ -4,8 +4,40 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 
+usage() {
+  cat <<'EOF'
+Usage: ./install.sh [--check]
+
+Options:
+  --check    Check managed file conflicts without installing packages.
+  -h, --help Show this help.
+EOF
+}
+
 main() {
   local os_name
+
+  if [ "$#" -gt 1 ]; then
+    usage >&2
+    exit 2
+  fi
+
+  case "${1:-}" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --check)
+      exec "$SCRIPT_DIR/bin/dotfiles-check-conflicts"
+      ;;
+    "")
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+
   os_name="$(uname -s)"
 
   case "$os_name" in

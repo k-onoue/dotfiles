@@ -8,6 +8,9 @@
 - [INSTRUCTIONS/japanese-tech-writing.md](INSTRUCTIONS/japanese-tech-writing.md)
   - 日本語の技術文書，README，docs 配下の文書，解説文，草稿を書くとき，または推敲するときに読む．
   - 句読点，一文一行，段落構成，論証の厳密さ，LLM っぽい空句の禁止，冗長の排除などの文章規範を定めている．
+- [INSTRUCTIONS/documentation-layout.md](INSTRUCTIONS/documentation-layout.md)
+  - README.md と docs/ の分担を変更するとき，または新しいドキュメントを追加するときに読む．
+  - README.md は `# dotfiles` だけに保ち，説明や手順を docs/ 配下で管理する規範を定めている．
 
 ## 運用
 

@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly DOTFILES_DIR
+
+conflicts=()
+
+usage() {
+  cat <<'EOF'
+Usage: bin/dotfiles-check-conflicts
+
+Check whether files managed by this dotfiles repository would conflict with
+existing files in $HOME.
+
+This command never modifies files.
+EOF
+}
+
+canonical_path() {
+  local path="$1"
+  local dir
+  local base
+
+  dir="$(dirname -- "$path")"
+  base="$(basename -- "$path")"
+
+  if [ -d "$dir" ]; then
+    printf '%s/%s\n' "$(cd -- "$dir" && pwd -P)" "$base"
+    return
+  fi
+
+  printf '%s\n' "$path"
+}
+
+symlink_points_to() {
+  local target_path="$1"
+  local source_path="$2"
+  local link_target
+  local link_target_abs
+  local source_abs
+
+  link_target="$(readlink "$target_path")"
+  case "$link_target" in
+    /*)
+      link_target_abs="$link_target"
+      ;;
+    *)
+      link_target_abs="$(dirname -- "$target_path")/$link_target"
+      ;;
+  esac
+
+  link_target_abs="$(canonical_path "$link_target_abs")"
+  source_abs="$(canonical_path "$source_path")"
+
+  [ "$link_target_abs" = "$source_abs" ]
+}
+
+check_managed_file() {
+  local source_path="$1"
+  local target_path="$2"
+
+  if [ -L "$target_path" ]; then
+    if symlink_points_to "$target_path" "$source_path"; then
+      return
+    fi
+
+    conflicts+=("$target_path")
+    return
+  fi
+
+  if [ -e "$target_path" ]; then
+    conflicts+=("$target_path")
+  fi
+}
+
+check_common_files() {
+  check_managed_file "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
+  check_managed_file "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
+  check_managed_file "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.zprofile"
+  check_managed_file "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
+  check_managed_file "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
+  check_managed_file "$DOTFILES_DIR/julia/startup.jl" "$HOME/.julia/config/startup.jl"
+}
+
+check_vscode_files() {
+  case "$(uname -s)" in
+    Darwin)
+      check_managed_file \
+        "$DOTFILES_DIR/vscode/settings.json" \
+        "$HOME/Library/Application Support/Code/User/settings.json"
+      check_managed_file \
+        "$DOTFILES_DIR/vscode/keybindings.json" \
+        "$HOME/Library/Application Support/Code/User/keybindings.json"
+      ;;
+    Linux)
+      check_managed_file \
+        "$DOTFILES_DIR/vscode/settings.json" \
+        "$HOME/.config/Code/User/settings.json"
+      check_managed_file \
+        "$DOTFILES_DIR/vscode/keybindings.json" \
+        "$HOME/.config/Code/User/keybindings.json"
+      ;;
+  esac
+}
+
+print_conflicts() {
+  local backup_dir="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+  local target_path
+
+  printf 'Managed dotfiles would conflict with existing files:\n' >&2
+  for target_path in "${conflicts[@]}"; do
+    printf '  %s\n' "$target_path" >&2
+  done
+
+  printf '\nReview the existing files before moving them aside.\n' >&2
+  printf 'One possible backup command sequence is:\n\n' >&2
+  printf 'mkdir -p %q\n' "$backup_dir" >&2
+  for target_path in "${conflicts[@]}"; do
+    printf 'mv -- %q %q\n' "$target_path" "$backup_dir/" >&2
+  done
+}
+
+main() {
+  case "${1:-}" in
+    -h | --help)
+      usage
+      return
+      ;;
+    "")
+      ;;
+    *)
+      usage >&2
+      return 2
+      ;;
+  esac
+
+  check_common_files
+  check_vscode_files
+
+  if [ "${#conflicts[@]}" -gt 0 ]; then
+    print_conflicts
+    return 1
+  fi
+
+  printf 'No managed file conflicts found.\n'
+}
+
+main "$@"

@@ -60,6 +60,11 @@ install_oh_my_zsh() {
     "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 }
 
+check_managed_file_conflicts() {
+  log "Checking for existing managed file conflicts."
+  "$DOTFILES_DIR/bin/dotfiles-check-conflicts"
+}
+
 stow_dotfiles() {
   log "Linking dotfiles with GNU Stow."
 
@@ -133,6 +138,7 @@ main() {
   ensure_homebrew
   install_brew_packages
   install_oh_my_zsh
+  check_managed_file_conflicts
   stow_dotfiles
   link_extra_files
   install_vscode_extensions
