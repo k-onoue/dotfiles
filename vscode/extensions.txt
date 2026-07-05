@@ -6,6 +6,7 @@ docker.docker
 enkia.tokyo-night
 foxundermoon.shell-format
 github.codespaces
+github.vscode-github-actions
 google.colab
 iamhyc.overleaf-workshop
 jock.svg
