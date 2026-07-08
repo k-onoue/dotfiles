@@ -16,3 +16,4 @@ gnupg
 lsb-release
 nodejs
 npm
+file

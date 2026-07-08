@@ -53,6 +53,15 @@ if command -v bat >/dev/null 2>&1; then
   alias cat='bat'
 fi
 
+function y() {
+  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+  yazi "$@" --cwd-file="$tmp"
+  if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+    cd -- "$cwd"
+  fi
+  rm -f -- "$tmp"
+}
+
 # Ubuntu packages fd as fdfind to avoid a name conflict.
 if ! command -v fd >/dev/null 2>&1 && command -v fdfind >/dev/null 2>&1; then
   alias fd='fdfind'

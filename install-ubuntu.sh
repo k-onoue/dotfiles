@@ -256,6 +256,22 @@ install_uv() {
   export PATH="$HOME/.local/bin:$PATH"
 }
 
+install_yazi() {
+  if command_exists yazi; then
+    log "Yazi is already installed."
+    return
+  fi
+
+  if ! command_exists uv; then
+    warn "uv is not installed; skipping Yazi installation."
+    return
+  fi
+
+  log "Installing Yazi with uv."
+  uv tool install yazi-bin
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
 install_codex_cli() {
   local temp_installer
 
@@ -441,6 +457,7 @@ main() {
   install_oh_my_zsh
   install_juliaup
   install_uv
+  install_yazi
   install_codex_cli
   install_vscode_extensions
   write_vscode_extension_diff

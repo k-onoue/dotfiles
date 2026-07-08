@@ -18,6 +18,7 @@ brew "shellcheck"
 brew "uv"
 brew "juliaup"
 brew "node"
+brew "yazi"
 
 # CLI applications distributed as Homebrew casks
 cask "codex"
