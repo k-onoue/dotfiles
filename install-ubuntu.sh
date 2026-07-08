@@ -399,6 +399,34 @@ link_extra_files() {
   link_julia_files
 }
 
+ensure_bash_integration() {
+  local bashrc_path="$HOME/.bashrc"
+  local integration_path="$DOTFILES_DIR/bash/.bashrc"
+  local marker_start="# >>> dotfiles bash integration >>>"
+  local marker_end="# <<< dotfiles bash integration <<<"
+
+  if [ ! -r "$integration_path" ]; then
+    warn "Bash integration is missing: $integration_path"
+    return
+  fi
+
+  touch "$bashrc_path"
+
+  if grep -Fq "$marker_start" "$bashrc_path"; then
+    log "Bash integration is already configured."
+    return
+  fi
+
+  log "Adding Bash integration to ~/.bashrc."
+  {
+    printf '\n%s\n' "$marker_start"
+    printf 'if [ -r %q ]; then\n' "$integration_path"
+    printf '  . %q\n' "$integration_path"
+    printf 'fi\n'
+    printf '%s\n' "$marker_end"
+  } >> "$bashrc_path"
+}
+
 reload_zsh_config() {
   if ! command_exists zsh; then
     warn "zsh is not available; skipping ~/.zshrc reload."
@@ -484,6 +512,7 @@ main() {
   check_managed_file_conflicts
   stow_dotfiles
   link_extra_files
+  ensure_bash_integration
   reload_zsh_config
 
   log "Ubuntu setup complete."

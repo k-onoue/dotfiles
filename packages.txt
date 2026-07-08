@@ -17,3 +17,4 @@ lsb-release
 nodejs
 npm
 file
+bat

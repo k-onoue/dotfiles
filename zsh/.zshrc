@@ -56,13 +56,18 @@ fi
 
 if command -v bat >/dev/null 2>&1; then
   alias cat='bat'
+elif command -v batcat >/dev/null 2>&1; then
+  alias cat='batcat'
 fi
 
 function y() {
-  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+  local tmp
+  local cwd
+
+  tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
   yazi "$@" --cwd-file="$tmp"
   if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-    cd -- "$cwd"
+    cd -- "$cwd" || return
   fi
   rm -f -- "$tmp"
 }
