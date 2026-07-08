@@ -322,8 +322,8 @@ stow_dotfiles() {
   log "Linking dotfiles with GNU Stow."
 
   if ! command_exists stow; then
-    warn "GNU Stow is not installed; skipping Stow-managed dotfile links."
-    warn "Install stow and rerun this script to link git, zsh, vim, and tmux files."
+    warn "GNU Stow is not installed; linking common dotfiles directly."
+    link_stow_fallback_files
     return
   fi
 
@@ -332,6 +332,14 @@ stow_dotfiles() {
     warn "Move conflicting files aside and run this script again."
     return 1
   fi
+}
+
+link_stow_fallback_files() {
+  link_managed_file "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
+  link_managed_file "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
+  link_managed_file "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.zprofile"
+  link_managed_file "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
+  link_managed_file "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
 }
 
 link_managed_file() {
