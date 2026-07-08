@@ -131,6 +131,67 @@ install_apt_packages() {
   run_privileged apt-get install -y "${packages[@]}"
 }
 
+install_bat() {
+  local machine
+  local target
+  local version
+  local archive_name
+  local download_url
+  local temp_dir
+
+  if command_exists bat || command_exists batcat; then
+    log "bat is already installed."
+    return
+  fi
+
+  if ! command_exists curl || ! command_exists tar || ! command_exists install; then
+    warn "curl, tar, or install is missing; skipping user-local bat installation."
+    return
+  fi
+
+  machine="$(uname -m)"
+  case "$machine" in
+    x86_64 | amd64)
+      target="x86_64-unknown-linux-gnu"
+      ;;
+    aarch64 | arm64)
+      target="aarch64-unknown-linux-gnu"
+      ;;
+    armv7l)
+      target="arm-unknown-linux-gnueabihf"
+      ;;
+    *)
+      warn "Unsupported architecture for user-local bat installation: $machine"
+      return
+      ;;
+  esac
+
+  version="$(
+    curl -fsSL https://api.github.com/repos/sharkdp/bat/releases/latest |
+      sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p' |
+      head -n 1
+  )"
+  if [ -z "$version" ]; then
+    warn "Could not determine the latest bat release; skipping user-local bat installation."
+    return
+  fi
+
+  archive_name="bat-v${version}-${target}.tar.gz"
+  download_url="https://github.com/sharkdp/bat/releases/download/v${version}/${archive_name}"
+  temp_dir="$(mktemp -d)"
+
+  log "Installing bat locally."
+  if ! curl -fsSL "$download_url" -o "$temp_dir/$archive_name"; then
+    rm -rf "$temp_dir"
+    return 1
+  fi
+  tar -xzf "$temp_dir/$archive_name" -C "$temp_dir"
+  mkdir -p "$HOME/.local/bin"
+  install -m 0755 "$temp_dir/bat-v${version}-${target}/bat" "$HOME/.local/bin/bat"
+  rm -rf "$temp_dir"
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
 install_github_cli() {
   local keyring_dir="/etc/apt/keyrings"
   local keyring_path="$keyring_dir/githubcli-archive-keyring.gpg"
@@ -500,6 +561,7 @@ main() {
   load_user_paths
   detect_privileges
   install_apt_packages
+  install_bat
   install_github_cli
   install_vscode
   install_oh_my_zsh

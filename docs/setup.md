@@ -108,7 +108,7 @@ sudo が使える場合は，初回実行時にパスワード入力が必要に
 sudo が使えない場合は，apt によるパッケージインストールと VS Code 本体のインストールをスキップする．
 GitHub CLI も apt で入れるため，sudo が使えない場合はスキップする．
 Codex CLI もこのリポジトリでは sudo が使える環境だけでインストールする．
-その場合でも，Oh My Zsh，juliaup，uv のようにユーザー領域へ入るものは，必要なコマンドが揃っていれば処理を続ける．
+その場合でも，Oh My Zsh，juliaup，uv，Yazi，bat のようにユーザー領域へ入るものは，必要なコマンドが揃っていれば処理を続ける．
 GNU Stow がない場合は，`git`，`zsh`，`vim`，`tmux` の各ファイルを直接 symlink する．
 ログインシェルが bash のサーバでも `y` wrapper と基本 alias を使えるように，`~/.bashrc` には `bash/.bashrc` を読み込む marker block を追記する．
 
