@@ -2,6 +2,12 @@
 # Bash integration managed by dotfiles.
 # Keep this file compatible with non-login interactive Bash sessions.
 
+# User-local commands installed by this repository should win over system tools.
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
 # Basic aliases shared across macOS and Ubuntu.
 alias ll='ls -alF'
 alias la='ls -A'
@@ -25,6 +31,11 @@ if command -v bat >/dev/null 2>&1; then
   alias cat='bat'
 elif command -v batcat >/dev/null 2>&1; then
   alias cat='batcat'
+fi
+
+# zoxide provides directory history jumping with z and zi.
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init bash)"
 fi
 
 function y() {

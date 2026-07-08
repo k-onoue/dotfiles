@@ -1,0 +1,6 @@
+# Tokyo Night flavor is installed by install.sh into:
+#   ~/.config/yazi/flavors/tokyo-night.yazi
+
+[flavor]
+use = "tokyo-night"
+dark = "tokyo-night"

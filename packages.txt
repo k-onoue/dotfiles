@@ -18,3 +18,14 @@ nodejs
 npm
 file
 bat
+ffmpeg
+p7zip-full
+poppler-utils
+zoxide
+resvg
+imagemagick
+xclip
+xsel
+wl-clipboard
+unzip
+fontconfig

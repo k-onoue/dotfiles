@@ -80,7 +80,95 @@ install_brew_packages() {
   fi
 
   log "Installing packages from Brewfile."
-  brew bundle --file "$DOTFILES_DIR/Brewfile"
+  if ! brew bundle --file "$DOTFILES_DIR/Brewfile"; then
+    warn "brew bundle failed; falling back to one-by-one Brewfile installation."
+    install_brewfile_entries_individually
+  fi
+}
+
+install_brewfile_entries_individually() {
+  local line
+  local kind
+  local package
+  local failed=false
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    kind=""
+    package=""
+
+    case "$line" in
+      brew\ \"*\")
+        kind="formula"
+        package="${line#brew \"}"
+        package="${package%%\"*}"
+        ;;
+      cask\ \"*\")
+        kind="cask"
+        package="${line#cask \"}"
+        package="${package%%\"*}"
+        ;;
+      *)
+        continue
+        ;;
+    esac
+
+    if [ -z "$package" ]; then
+      continue
+    fi
+
+    case "$kind" in
+      formula)
+        if brew list --formula "$package" >/dev/null 2>&1; then
+          log "Using $package."
+          continue
+        fi
+
+        log "Installing $package."
+        if ! brew install "$package"; then
+          warn "Failed to install Homebrew formula: $package"
+          failed=true
+        fi
+        ;;
+      cask)
+        if brew list --cask "$package" >/dev/null 2>&1; then
+          log "Using $package."
+          continue
+        fi
+
+        log "Installing $package."
+        if ! brew install --cask "$package"; then
+          warn "Failed to install Homebrew cask: $package"
+          failed=true
+        fi
+        ;;
+    esac
+  done < "$DOTFILES_DIR/Brewfile"
+
+  if [ "$failed" = true ]; then
+    return 1
+  fi
+}
+
+link_yazi_preview_tools() {
+  local formula
+
+  load_homebrew
+  if ! command_exists brew; then
+    warn "Homebrew is not available; skipping Yazi preview tool linking."
+    return
+  fi
+
+  for formula in ffmpeg-full imagemagick-full; do
+    if ! brew list --formula "$formula" >/dev/null 2>&1; then
+      warn "$formula is not installed; skipping link step."
+      continue
+    fi
+
+    log "Linking $formula for Yazi previews."
+    if ! brew link --force --overwrite "$formula"; then
+      warn "Failed to link $formula. Yazi previews may use an older command on PATH."
+    fi
+  done
 }
 
 install_oh_my_zsh() {
@@ -92,6 +180,38 @@ install_oh_my_zsh() {
   log "Installing Oh My Zsh."
   RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c \
     "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+}
+
+install_yazi_tokyo_night_flavor() {
+  local flavor_dir="$HOME/.config/yazi/flavors/tokyo-night.yazi"
+  local flavor_parent
+
+  if ! command_exists git; then
+    warn "git is not available; skipping Yazi Tokyo Night flavor installation."
+    return
+  fi
+
+  flavor_parent="$(dirname -- "$flavor_dir")"
+  mkdir -p "$flavor_parent"
+
+  if [ -d "$flavor_dir/.git" ]; then
+    log "Updating Yazi Tokyo Night flavor."
+    if ! git -C "$flavor_dir" pull --ff-only; then
+      warn "Failed to update Yazi Tokyo Night flavor."
+    fi
+    return
+  fi
+
+  if [ -e "$flavor_dir" ]; then
+    warn "Yazi Tokyo Night flavor path already exists and is not a git checkout: $flavor_dir"
+    return
+  fi
+
+  log "Installing Yazi Tokyo Night flavor."
+  if ! git clone --depth 1 https://github.com/BennyOe/tokyo-night.yazi.git "$flavor_dir"; then
+    rm -rf "$flavor_dir"
+    warn "Failed to install Yazi Tokyo Night flavor."
+  fi
 }
 
 check_managed_file_conflicts() {
@@ -144,6 +264,12 @@ link_extra_files() {
   link_managed_file \
     "$DOTFILES_DIR/julia/startup.jl" \
     "$HOME/.julia/config/startup.jl"
+  link_managed_file \
+    "$DOTFILES_DIR/yazi/.config/yazi/theme.toml" \
+    "$HOME/.config/yazi/theme.toml"
+  link_managed_file \
+    "$DOTFILES_DIR/iterm2/tokyo-night.plist" \
+    "$HOME/Library/Application Support/iTerm2/DynamicProfiles/tokyo-night.plist"
 }
 
 reload_zsh_config() {
@@ -210,7 +336,9 @@ main() {
   parse_args "$@"
   ensure_homebrew
   install_brew_packages
+  link_yazi_preview_tools
   install_oh_my_zsh
+  install_yazi_tokyo_night_flavor
   install_vscode_extensions
   write_vscode_extension_diff
   check_managed_file_conflicts

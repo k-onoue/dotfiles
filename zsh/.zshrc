@@ -60,6 +60,11 @@ elif command -v batcat >/dev/null 2>&1; then
   alias cat='batcat'
 fi
 
+# zoxide provides directory history jumping with z and zi.
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init zsh)"
+fi
+
 function y() {
   local tmp
   local cwd

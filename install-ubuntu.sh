@@ -39,6 +39,15 @@ load_user_paths() {
   export PATH="$HOME/.local/bin:$HOME/.juliaup/bin:$PATH"
 }
 
+version_at_least() {
+  local current="$1"
+  local required="$2"
+  local lowest
+
+  lowest="$(printf '%s\n%s\n' "$required" "$current" | sort -V | head -n 1)"
+  [ "$lowest" = "$required" ]
+}
+
 parse_args() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -124,11 +133,92 @@ install_apt_packages() {
         continue
         ;;
     esac
+
+    if ! apt-cache show "$package" >/dev/null 2>&1; then
+      warn "apt package is not available in the configured repositories: $package"
+      continue
+    fi
+
     packages+=("$package")
   done < "$DOTFILES_DIR/packages.txt"
 
+  if [ "${#packages[@]}" -eq 0 ]; then
+    warn "No apt packages are available to install."
+    return
+  fi
+
   log "Installing apt packages."
   run_privileged apt-get install -y "${packages[@]}"
+}
+
+install_fzf() {
+  local current_version=""
+  local version_output
+  local machine
+  local target
+  local latest_tag
+  local version
+  local archive_name
+  local download_url
+  local temp_dir
+
+  if command_exists fzf; then
+    version_output="$(fzf --version 2>/dev/null || true)"
+    current_version="${version_output%% *}"
+    if [ -n "$current_version" ] && version_at_least "$current_version" "0.53.0"; then
+      log "fzf $current_version is already installed."
+      return
+    fi
+    warn "fzf ${current_version:-unknown} is older than Yazi's recommended 0.53.0; installing a user-local fzf."
+  fi
+
+  if ! command_exists curl || ! command_exists tar || ! command_exists install; then
+    warn "curl, tar, or install is missing; skipping user-local fzf installation."
+    return
+  fi
+
+  machine="$(uname -m)"
+  case "$machine" in
+    x86_64 | amd64)
+      target="linux_amd64"
+      ;;
+    aarch64 | arm64)
+      target="linux_arm64"
+      ;;
+    armv7l)
+      target="linux_armv7"
+      ;;
+    *)
+      warn "Unsupported architecture for user-local fzf installation: $machine"
+      return
+      ;;
+  esac
+
+  latest_tag="$(
+    curl -fsSL https://api.github.com/repos/junegunn/fzf/releases/latest |
+      sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' |
+      head -n 1
+  )" || latest_tag=""
+  if [ -z "$latest_tag" ]; then
+    warn "Could not determine the latest fzf release; skipping user-local fzf installation."
+    return
+  fi
+
+  version="${latest_tag#v}"
+  archive_name="fzf-${version}-${target}.tar.gz"
+  download_url="https://github.com/junegunn/fzf/releases/download/${latest_tag}/${archive_name}"
+  temp_dir="$(mktemp -d)"
+
+  log "Installing fzf locally."
+  if ! curl -fsSL "$download_url" -o "$temp_dir/$archive_name"; then
+    rm -rf "$temp_dir"
+    return 1
+  fi
+  tar -xzf "$temp_dir/$archive_name" -C "$temp_dir"
+  mkdir -p "$HOME/.local/bin"
+  install -m 0755 "$temp_dir/fzf" "$HOME/.local/bin/fzf"
+  rm -rf "$temp_dir"
+  export PATH="$HOME/.local/bin:$PATH"
 }
 
 install_bat() {
@@ -189,6 +279,34 @@ install_bat() {
   mkdir -p "$HOME/.local/bin"
   install -m 0755 "$temp_dir/bat-v${version}-${target}/bat" "$HOME/.local/bin/bat"
   rm -rf "$temp_dir"
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
+install_zoxide() {
+  local temp_installer
+
+  if command_exists zoxide; then
+    log "zoxide is already installed."
+    return
+  fi
+
+  if ! command_exists curl; then
+    warn "curl is not installed; skipping zoxide installation."
+    return
+  fi
+
+  log "Installing zoxide locally."
+  temp_installer="$(mktemp)"
+  if ! curl -fsSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh -o "$temp_installer"; then
+    rm -f "$temp_installer"
+    return 1
+  fi
+  mkdir -p "$HOME/.local/bin" "$HOME/.local/share/man"
+  if ! sh "$temp_installer" --bin-dir "$HOME/.local/bin" --man-dir "$HOME/.local/share/man"; then
+    rm -f "$temp_installer"
+    return 1
+  fi
+  rm -f "$temp_installer"
   export PATH="$HOME/.local/bin:$PATH"
 }
 
@@ -344,6 +462,102 @@ install_yazi() {
   export PATH="$HOME/.local/bin:$PATH"
 }
 
+install_yazi_tokyo_night_flavor() {
+  local flavor_dir="$HOME/.config/yazi/flavors/tokyo-night.yazi"
+  local flavor_parent
+
+  if ! command_exists git; then
+    warn "git is not available; skipping Yazi Tokyo Night flavor installation."
+    return
+  fi
+
+  flavor_parent="$(dirname -- "$flavor_dir")"
+  mkdir -p "$flavor_parent"
+
+  if [ -d "$flavor_dir/.git" ]; then
+    log "Updating Yazi Tokyo Night flavor."
+    if ! git -C "$flavor_dir" pull --ff-only; then
+      warn "Failed to update Yazi Tokyo Night flavor."
+    fi
+    return
+  fi
+
+  if [ -e "$flavor_dir" ]; then
+    warn "Yazi Tokyo Night flavor path already exists and is not a git checkout: $flavor_dir"
+    return
+  fi
+
+  log "Installing Yazi Tokyo Night flavor."
+  if ! git clone --depth 1 https://github.com/BennyOe/tokyo-night.yazi.git "$flavor_dir"; then
+    rm -rf "$flavor_dir"
+    warn "Failed to install Yazi Tokyo Night flavor."
+  fi
+}
+
+install_nerd_font_symbols() {
+  local font_dir="$HOME/.local/share/fonts/NerdFontsSymbolsOnly"
+  local existing_font
+  local archive_path
+  local temp_dir
+  local font_file
+  local font_count=0
+
+  existing_font="$(find "$font_dir" -type f \( -name '*.ttf' -o -name '*.otf' \) -print -quit 2>/dev/null || true)"
+  if [ -n "$existing_font" ]; then
+    log "Symbols Nerd Font is already installed."
+    return
+  fi
+
+  if ! command_exists curl; then
+    warn "curl is not installed; skipping Symbols Nerd Font installation."
+    return
+  fi
+
+  if ! command_exists python3 && ! command_exists unzip; then
+    warn "python3 or unzip is required to extract Nerd Font archives; skipping Symbols Nerd Font installation."
+    return
+  fi
+
+  temp_dir="$(mktemp -d)"
+  archive_path="$temp_dir/NerdFontsSymbolsOnly.zip"
+
+  log "Installing Symbols Nerd Font locally."
+  if ! curl -fsSL \
+    https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip \
+    -o "$archive_path"; then
+    rm -rf "$temp_dir"
+    return 1
+  fi
+
+  mkdir -p "$temp_dir/fonts"
+  if command_exists python3; then
+    if ! python3 -m zipfile -e "$archive_path" "$temp_dir/fonts"; then
+      rm -rf "$temp_dir"
+      return 1
+    fi
+  elif ! unzip -q "$archive_path" -d "$temp_dir/fonts"; then
+    rm -rf "$temp_dir"
+    return 1
+  fi
+
+  mkdir -p "$font_dir"
+  while IFS= read -r font_file; do
+    install -m 0644 "$font_file" "$font_dir/"
+    font_count=$((font_count + 1))
+  done < <(find "$temp_dir/fonts" -type f \( -name '*.ttf' -o -name '*.otf' \))
+
+  rm -rf "$temp_dir"
+
+  if [ "$font_count" -eq 0 ]; then
+    warn "No font files were found in the Symbols Nerd Font archive."
+    return 1
+  fi
+
+  if command_exists fc-cache; then
+    fc-cache -f "$font_dir" >/dev/null 2>&1 || warn "Failed to refresh fontconfig cache."
+  fi
+}
+
 install_codex_cli() {
   local temp_installer
 
@@ -455,9 +669,16 @@ link_julia_files() {
     "$HOME/.julia/config/startup.jl"
 }
 
+link_yazi_files() {
+  link_managed_file \
+    "$DOTFILES_DIR/yazi/.config/yazi/theme.toml" \
+    "$HOME/.config/yazi/theme.toml"
+}
+
 link_extra_files() {
   link_vscode_files
   link_julia_files
+  link_yazi_files
 }
 
 ensure_bash_integration() {
@@ -561,13 +782,17 @@ main() {
   load_user_paths
   detect_privileges
   install_apt_packages
+  install_fzf
   install_bat
+  install_zoxide
   install_github_cli
   install_vscode
   install_oh_my_zsh
   install_juliaup
   install_uv
   install_yazi
+  install_yazi_tokyo_night_flavor
+  install_nerd_font_symbols
   install_codex_cli
   install_vscode_extensions
   write_vscode_extension_diff

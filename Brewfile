@@ -19,6 +19,13 @@ brew "uv"
 brew "juliaup"
 brew "node"
 brew "yazi"
+brew "ffmpeg-full"
+brew "sevenzip"
+brew "poppler"
+brew "zoxide"
+brew "resvg"
+brew "imagemagick-full"
+cask "font-symbols-only-nerd-font"
 
 # CLI applications distributed as Homebrew casks
 cask "codex"

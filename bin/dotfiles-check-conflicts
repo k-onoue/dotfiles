@@ -84,7 +84,14 @@ check_common_files() {
   check_managed_file "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.zprofile"
   check_managed_file "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
   check_managed_file "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
+  check_managed_file "$DOTFILES_DIR/yazi/.config/yazi/theme.toml" "$HOME/.config/yazi/theme.toml"
   check_managed_file "$DOTFILES_DIR/julia/startup.jl" "$HOME/.julia/config/startup.jl"
+}
+
+check_macos_files() {
+  check_managed_file \
+    "$DOTFILES_DIR/iterm2/tokyo-night.plist" \
+    "$HOME/Library/Application Support/iTerm2/DynamicProfiles/tokyo-night.plist"
 }
 
 check_vscode_files() {
@@ -146,6 +153,9 @@ main() {
   done
 
   check_common_files
+  if [ "$(uname -s)" = "Darwin" ]; then
+    check_macos_files
+  fi
   if [ "$SKIP_VSCODE" != true ]; then
     check_vscode_files
   fi
