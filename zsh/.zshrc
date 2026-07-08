@@ -23,8 +23,13 @@ export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="candy"
 plugins=(
   git
-  fzf
 )
+
+if command -v fzf >/dev/null 2>&1; then
+  plugins+=(
+    fzf
+  )
+fi
 
 if [ -r "$ZSH/oh-my-zsh.sh" ]; then
   source "$ZSH/oh-my-zsh.sh"

@@ -79,14 +79,21 @@ detect_privileges() {
     return
   fi
 
-  if sudo -v; then
+  if sudo -n -v >/dev/null 2>&1; then
     CAN_USE_PRIVILEGES=true
     USE_SUDO=true
     log "sudo is available; privileged package installation is enabled."
     return
   fi
 
-  warn "sudo authentication failed or this user is not allowed to use sudo."
+  if [ -t 0 ] && sudo -v; then
+    CAN_USE_PRIVILEGES=true
+    USE_SUDO=true
+    log "sudo is available; privileged package installation is enabled."
+    return
+  fi
+
+  warn "sudo authentication failed, requires a terminal, or this user is not allowed to use sudo."
   warn "Skipping privileged package installation."
 }
 
