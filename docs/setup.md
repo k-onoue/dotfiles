@@ -153,6 +153,20 @@ git pull
 ./install.sh --server
 ```
 
+複数の SSH 接続先をまとめて更新する場合は，ローカルの dotfiles から次を実行する．
+
+```bash
+cd ~/ws/dotfiles
+bin/dotfiles-update-servers
+```
+
+デフォルトでは，`naist0`，`mini`，`mi1` に接続し，各サーバ上で `~/ws/dotfiles` に移動して `git pull --ff-only` と `./install.sh --server` を実行する．
+対象ホストを明示する場合は，引数にホスト名を渡す．
+
+```bash
+bin/dotfiles-update-servers naist0
+```
+
 パッケージのインストール処理は，既に入っているものを再利用する．
 Oh My Zsh，juliaup，uv も存在を確認してから処理する．
 VS Code 拡張機能は，`vscode/extensions.txt` の内容を一つずつインストールする．

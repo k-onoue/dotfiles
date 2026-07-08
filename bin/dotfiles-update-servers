@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT_HOSTS=(
+  naist0
+  mini
+  mi1
+)
+
+usage() {
+  cat <<'EOF'
+Usage: bin/dotfiles-update-servers [HOST...]
+
+Update dotfiles on remote Ubuntu servers.
+
+When no HOST is given, the default hosts are:
+  naist0 mini mi1
+
+Each remote host runs:
+  cd ~/ws/dotfiles
+  git pull --ff-only
+  ./install.sh --server
+EOF
+}
+
+main() {
+  local hosts=()
+  local host
+  local failed_hosts=()
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        hosts+=("$1")
+        ;;
+    esac
+    shift
+  done
+
+  if [ "${#hosts[@]}" -eq 0 ]; then
+    hosts=("${DEFAULT_HOSTS[@]}")
+  fi
+
+  for host in "${hosts[@]}"; do
+    printf '\n==> Updating %s\n' "$host"
+    if ssh -t "$host" 'cd "$HOME/ws/dotfiles" && git pull --ff-only && ./install.sh --server'; then
+      printf '==> %s updated successfully\n' "$host"
+      continue
+    fi
+
+    printf 'warning: failed to update %s\n' "$host" >&2
+    failed_hosts+=("$host")
+  done
+
+  if [ "${#failed_hosts[@]}" -gt 0 ]; then
+    printf '\nFailed hosts:\n' >&2
+    printf '  %s\n' "${failed_hosts[@]}" >&2
+    exit 1
+  fi
+}
+
+main "$@"
