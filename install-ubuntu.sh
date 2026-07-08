@@ -35,6 +35,10 @@ run_code_cli() {
   NODE_NO_WARNINGS=1 code "$@"
 }
 
+load_user_paths() {
+  export PATH="$HOME/.local/bin:$HOME/.juliaup/bin:$PATH"
+}
+
 parse_args() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -252,7 +256,7 @@ install_uv() {
   fi
 
   log "Installing uv."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+  curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh
   export PATH="$HOME/.local/bin:$PATH"
 }
 
@@ -450,6 +454,7 @@ write_vscode_extension_diff() {
 
 main() {
   parse_args "$@"
+  load_user_paths
   detect_privileges
   install_apt_packages
   install_github_cli
