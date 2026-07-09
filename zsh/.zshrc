@@ -25,6 +25,12 @@ plugins=(
   git
 )
 
+if [ -r "${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
+  plugins+=(
+    zsh-autosuggestions
+  )
+fi
+
 if command -v fzf >/dev/null 2>&1; then
   plugins+=(
     fzf

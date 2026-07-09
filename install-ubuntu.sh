@@ -414,6 +414,43 @@ install_oh_my_zsh() {
     "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 }
 
+install_zsh_autosuggestions() {
+  local plugin_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+  local plugin_parent
+
+  if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    warn "Oh My Zsh is not installed; skipping zsh-autosuggestions installation."
+    return
+  fi
+
+  if ! command_exists git; then
+    warn "git is not available; skipping zsh-autosuggestions installation."
+    return
+  fi
+
+  plugin_parent="$(dirname -- "$plugin_dir")"
+  mkdir -p "$plugin_parent"
+
+  if [ -d "$plugin_dir/.git" ]; then
+    log "Updating zsh-autosuggestions."
+    if ! git -C "$plugin_dir" pull --ff-only; then
+      warn "Failed to update zsh-autosuggestions."
+    fi
+    return
+  fi
+
+  if [ -e "$plugin_dir" ]; then
+    warn "zsh-autosuggestions path already exists and is not a git checkout: $plugin_dir"
+    return
+  fi
+
+  log "Installing zsh-autosuggestions."
+  if ! git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions.git "$plugin_dir"; then
+    rm -rf "$plugin_dir"
+    warn "Failed to install zsh-autosuggestions."
+  fi
+}
+
 install_juliaup() {
   if command_exists juliaup; then
     log "juliaup is already installed."
@@ -788,6 +825,7 @@ main() {
   install_github_cli
   install_vscode
   install_oh_my_zsh
+  install_zsh_autosuggestions
   install_juliaup
   install_uv
   install_yazi
