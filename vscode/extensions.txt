@@ -43,4 +43,5 @@ svelte.svelte-vscode
 tamasfe.even-better-toml
 timonwong.shellcheck
 tomoki1207.pdf
+vscodevim.vim
 yzhang.markdown-all-in-one
