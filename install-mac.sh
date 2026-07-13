@@ -171,6 +171,36 @@ link_yazi_preview_tools() {
   done
 }
 
+install_uv_tool_if_missing() {
+  local package="$1"
+  local executable="$2"
+
+  export PATH="$HOME/.local/bin:$PATH"
+
+  if command_exists "$executable"; then
+    log "$executable is already installed."
+    return
+  fi
+
+  if ! command_exists uv; then
+    warn "uv is not available; skipping $package installation."
+    return
+  fi
+
+  log "Installing $package with uv tool."
+  if ! uv tool install "$package"; then
+    warn "Failed to install $package with uv tool."
+    return
+  fi
+
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
+install_yazi_viewer_tools() {
+  install_uv_tool_if_missing rich-cli rich
+  install_uv_tool_if_missing nbpreview nbpreview
+}
+
 install_oh_my_zsh() {
   if [ -d "$HOME/.oh-my-zsh" ]; then
     log "Oh My Zsh is already installed."
@@ -251,6 +281,25 @@ install_yazi_tokyo_night_flavor() {
   fi
 }
 
+install_yazi_piper_plugin() {
+  local plugin_dir="$HOME/.config/yazi/plugins/piper.yazi"
+
+  if ! command_exists ya; then
+    warn "ya is not available; skipping Yazi piper plugin installation."
+    return
+  fi
+
+  if [ -d "$plugin_dir" ] || ya pkg list 2>/dev/null | grep -Fq "piper"; then
+    log "Yazi piper plugin is already installed."
+    return
+  fi
+
+  log "Installing Yazi piper plugin."
+  if ! ya pkg add yazi-rs/plugins:piper; then
+    warn "Failed to install Yazi piper plugin."
+  fi
+}
+
 check_managed_file_conflicts() {
   log "Checking for existing managed file conflicts."
   "$DOTFILES_DIR/bin/dotfiles-check-conflicts"
@@ -304,6 +353,9 @@ link_extra_files() {
   link_managed_file \
     "$DOTFILES_DIR/yazi/.config/yazi/theme.toml" \
     "$HOME/.config/yazi/theme.toml"
+  link_managed_file \
+    "$DOTFILES_DIR/yazi/.config/yazi/yazi.toml" \
+    "$HOME/.config/yazi/yazi.toml"
   link_managed_file \
     "$DOTFILES_DIR/iterm2/tokyo-night.plist" \
     "$HOME/Library/Application Support/iTerm2/DynamicProfiles/tokyo-night.plist"
@@ -374,9 +426,11 @@ main() {
   ensure_homebrew
   install_brew_packages
   link_yazi_preview_tools
+  install_yazi_viewer_tools
   install_oh_my_zsh
   install_zsh_autosuggestions
   install_yazi_tokyo_night_flavor
+  install_yazi_piper_plugin
   install_vscode_extensions
   write_vscode_extension_diff
   check_managed_file_conflicts

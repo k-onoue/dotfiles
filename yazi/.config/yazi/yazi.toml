@@ -1,0 +1,15 @@
+# yazi.toml
+#
+# Keep only settings that are safe to share across macOS and Ubuntu.
+# Theme settings live in theme.toml, and plugin packages are installed by
+# install.sh so that ~/.config/yazi itself can remain a normal directory.
+
+[plugin]
+prepend_previewers = [
+  # Render Markdown with Rich in the preview pane.
+  { url = "*.md", run = 'piper -- rich --markdown --force-terminal --width "$w" "$1"' },
+  { url = "*.markdown", run = 'piper -- rich --markdown --force-terminal --width "$w" "$1"' },
+
+  # Render Jupyter notebooks without launching a browser or VS Code.
+  { url = "*.ipynb", run = 'piper -- PYTHONWARNINGS="ignore:It seems this process is not running within a terminal" nbpreview --theme material --image-drawing braille --width "$w" --no-paging "$1"' },
+]

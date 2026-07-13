@@ -18,6 +18,8 @@ nodejs
 npm
 file
 bat
+bubblewrap
+uidmap
 ffmpeg
 p7zip-full
 poppler-utils

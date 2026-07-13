@@ -499,6 +499,36 @@ install_yazi() {
   export PATH="$HOME/.local/bin:$PATH"
 }
 
+install_uv_tool_if_missing() {
+  local package="$1"
+  local executable="$2"
+
+  export PATH="$HOME/.local/bin:$PATH"
+
+  if command_exists "$executable"; then
+    log "$executable is already installed."
+    return
+  fi
+
+  if ! command_exists uv; then
+    warn "uv is not installed; skipping $package installation."
+    return
+  fi
+
+  log "Installing $package with uv tool."
+  if ! uv tool install "$package"; then
+    warn "Failed to install $package with uv tool."
+    return
+  fi
+
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
+install_yazi_viewer_tools() {
+  install_uv_tool_if_missing rich-cli rich
+  install_uv_tool_if_missing nbpreview nbpreview
+}
+
 install_yazi_tokyo_night_flavor() {
   local flavor_dir="$HOME/.config/yazi/flavors/tokyo-night.yazi"
   local flavor_parent
@@ -528,6 +558,25 @@ install_yazi_tokyo_night_flavor() {
   if ! git clone --depth 1 https://github.com/BennyOe/tokyo-night.yazi.git "$flavor_dir"; then
     rm -rf "$flavor_dir"
     warn "Failed to install Yazi Tokyo Night flavor."
+  fi
+}
+
+install_yazi_piper_plugin() {
+  local plugin_dir="$HOME/.config/yazi/plugins/piper.yazi"
+
+  if ! command_exists ya; then
+    warn "ya is not available; skipping Yazi piper plugin installation."
+    return
+  fi
+
+  if [ -d "$plugin_dir" ] || ya pkg list 2>/dev/null | grep -Fq "piper"; then
+    log "Yazi piper plugin is already installed."
+    return
+  fi
+
+  log "Installing Yazi piper plugin."
+  if ! ya pkg add yazi-rs/plugins:piper; then
+    warn "Failed to install Yazi piper plugin."
   fi
 }
 
@@ -627,6 +676,31 @@ install_codex_cli() {
   export PATH="$HOME/.local/bin:$PATH"
 }
 
+check_codex_sandbox_dependencies() {
+  local output
+
+  if ! command_exists codex; then
+    return
+  fi
+
+  if ! command_exists bwrap; then
+    warn "Codex CLI is installed, but bubblewrap (bwrap) is not available."
+    warn "Codex sandboxing with Linux namespaces may fail on this host."
+    warn "Install the Ubuntu package 'bubblewrap' with apt, or ask the server administrator to install it."
+    return
+  fi
+
+  if output="$(bwrap --unshare-user --ro-bind / / /usr/bin/true 2>&1)"; then
+    log "bubblewrap can create a user namespace for Codex sandboxing."
+    return
+  fi
+
+  warn "bubblewrap is installed, but it cannot create a user namespace."
+  warn "Codex sandboxing with Linux namespaces may fail on this host."
+  warn "bubblewrap test output: $output"
+  warn "Ask the server administrator to enable unprivileged user namespaces or install/configure bubblewrap and uidmap."
+}
+
 check_managed_file_conflicts() {
   log "Checking for existing managed file conflicts."
   if [ "$SERVER_MODE" = true ]; then
@@ -710,6 +784,9 @@ link_yazi_files() {
   link_managed_file \
     "$DOTFILES_DIR/yazi/.config/yazi/theme.toml" \
     "$HOME/.config/yazi/theme.toml"
+  link_managed_file \
+    "$DOTFILES_DIR/yazi/.config/yazi/yazi.toml" \
+    "$HOME/.config/yazi/yazi.toml"
 }
 
 link_extra_files() {
@@ -829,9 +906,12 @@ main() {
   install_juliaup
   install_uv
   install_yazi
+  install_yazi_viewer_tools
   install_yazi_tokyo_night_flavor
+  install_yazi_piper_plugin
   install_nerd_font_symbols
   install_codex_cli
+  check_codex_sandbox_dependencies
   install_vscode_extensions
   write_vscode_extension_diff
   check_managed_file_conflicts
