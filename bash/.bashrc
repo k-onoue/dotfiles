@@ -38,6 +38,11 @@ if command -v zoxide >/dev/null 2>&1; then
   eval "$(zoxide init bash)"
 fi
 
+# Herdr is the primary multiplexer for remote Codex work.
+if command -v herdr >/dev/null 2>&1; then
+  eval "$(herdr completion bash 2>/dev/null || true)"
+fi
+
 function y() {
   local tmp
   local cwd

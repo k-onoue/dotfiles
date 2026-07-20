@@ -580,6 +580,25 @@ install_yazi_piper_plugin() {
   fi
 }
 
+install_herdr() {
+  export PATH="$HOME/.local/bin:$PATH"
+
+  if command_exists herdr; then
+    log "Herdr is already installed."
+    return
+  fi
+
+  if ! command_exists curl; then
+    warn "curl is not installed; skipping Herdr installation."
+    return
+  fi
+
+  log "Installing Herdr locally."
+  mkdir -p "$HOME/.local/bin"
+  curl -fsSL https://herdr.dev/install.sh | env HERDR_INSTALL_DIR="$HOME/.local/bin" sh
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
 install_nerd_font_symbols() {
   local font_dir="$HOME/.local/share/fonts/NerdFontsSymbolsOnly"
   local existing_font
@@ -789,9 +808,16 @@ link_yazi_files() {
     "$HOME/.config/yazi/yazi.toml"
 }
 
+link_herdr_files() {
+  link_managed_file \
+    "$DOTFILES_DIR/herdr/.config/herdr/config.toml" \
+    "$HOME/.config/herdr/config.toml"
+}
+
 link_extra_files() {
   link_vscode_files
   link_julia_files
+  link_herdr_files
   link_yazi_files
 }
 
@@ -909,6 +935,7 @@ main() {
   install_yazi_viewer_tools
   install_yazi_tokyo_night_flavor
   install_yazi_piper_plugin
+  install_herdr
   install_nerd_font_symbols
   install_codex_cli
   check_codex_sandbox_dependencies

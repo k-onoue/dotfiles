@@ -351,6 +351,9 @@ link_extra_files() {
     "$DOTFILES_DIR/julia/startup.jl" \
     "$HOME/.julia/config/startup.jl"
   link_managed_file \
+    "$DOTFILES_DIR/herdr/.config/herdr/config.toml" \
+    "$HOME/.config/herdr/config.toml"
+  link_managed_file \
     "$DOTFILES_DIR/yazi/.config/yazi/theme.toml" \
     "$HOME/.config/yazi/theme.toml"
   link_managed_file \

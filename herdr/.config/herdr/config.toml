@@ -1,0 +1,19 @@
+# Herdr configuration managed by dotfiles.
+#
+# Herdr is used as the primary terminal multiplexer for remote Codex work.
+# tmux remains installed as a generic fallback.
+
+onboarding = false
+
+[terminal]
+shell_mode = "auto"
+new_cwd = "follow"
+
+[theme]
+name = "tokyo-night"
+
+[remote]
+manage_ssh_config = true
+
+[session]
+resume_agents_on_restore = true

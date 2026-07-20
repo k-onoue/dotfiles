@@ -118,6 +118,11 @@ if command -v juliaup >/dev/null 2>&1; then
   eval "$(juliaup completions zsh 2>/dev/null || true)"
 fi
 
+# Herdr is the primary multiplexer for remote Codex work.
+if command -v herdr >/dev/null 2>&1; then
+  eval "$(herdr completion zsh 2>/dev/null || true)"
+fi
+
 # iTerm2 shell integration is optional and only loaded when installed.
 if [ -r "$HOME/.iterm2_shell_integration.zsh" ]; then
   source "$HOME/.iterm2_shell_integration.zsh"
